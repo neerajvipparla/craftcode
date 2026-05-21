@@ -222,38 +222,72 @@ If yes → stop, refactor boundary, then proceed.
 
 **Write this before touching any code.** Save to `docs/phases/<feature-name>.md`.
 
+### Versioning rules
+
+Every phase starts at `.0`. Sub-versions (`.1`, `.2`, ...) are added as incremental changes or tests emerge from implementation.
+
+- `1.0` — the planned major work for Phase 1
+- `1.1`, `1.2` — small follow-on changes/tests discovered while doing Phase 1
+- A phase is **complete only when all its sub-versions are marked done**
+- Sub-versions within the same phase do not require a new phase doc entry for Phase 2 to start — they run within Phase 1's scope
+
+### Backtrack versioning
+
+**The direction of the change determines whether a backtrack entry is needed.**
+
+**Forward change (current phase needs to update a phase not yet implemented):**
+Go directly. Edit that future phase's doc entry in place. No backtrack notation needed — the phase hasn't been built yet, nothing is broken.
+
+**Backward change (current phase needs to update a phase already completed):**
+If during implementation of Phase N you discover Phase M must change, **do not silently patch it**. Insert this entry in the phase doc immediately after Phase N, before Phase N+1. Create a backtrack sub-version:
+- New sub-version of target phase = **latest sub-version of that phase + 1**
+- Notation: `Phase A.B → Phase C.D (backtrack)`
+- Write the entry immediately in the phase doc
+- Implement C.D fully before resuming Phase A
+
+**Example:** At Phase 3.0, Phase 1 (already done at 1.2) needs a change → creates Phase 1.3.
+Notation: `Phase 3.0 → Phase 1.3 (backtrack)`. Implement 1.3, then return to 3.0.
+
+At Phase 3.0, Phase 5 (not yet implemented) needs a change → edit Phase 5.0's entry directly. No backtrack.
+
+---
+
 ```markdown
 # <Feature Name> — Implementation Phases
 
-## Phase 1: <name>
+## Phase 1.0: <name>
 - What: <what gets built>
-- Data structures: <structures introduced or mutated in this phase, with access pattern>
+- Data structures: <structures introduced or mutated, with access pattern>
 - Inputs: <what it depends on being done first>
 - Done when: <concrete completion condition>
+- Status: [ ]
 
-## Phase 2: <name>
+## Phase 1.1: <name> — sub-change
+- Trigger: <what Phase 1.0 revealed that requires this>
+- What: <incremental change or test within Phase 1's scope>
+- Done when: <concrete completion condition>
+- Status: [ ]
+
+## Phase 2.0: <name>
 - What: ...
-- Data structures: <same field — never leave blank>
-- Inputs: Phase 1 complete
+- Data structures: <never leave blank>
+- Inputs: Phase 1.0 (and all 1.x sub-versions) complete
 - Done when: ...
+- Status: [ ]
 
-## Phase N: ...
+## Phase 3.0 → Phase 1.3 (backtrack)
+- Trigger: <what Phase 3.0 discovered that requires this>
+- Creates: Phase 1.3 — latest Phase 1 sub-version was 1.2, so new = 1.3
+- Changes to Phase 1: <what specifically changes>
+- Impact on completed work: <what needs to be revisited>
+- Status: [ ]
+
+## Phase 3.0: <name> (resumed after Phase 1.3 complete)
+- What: ...
+- Status: [ ]
 ```
 
-### Backtrack notation
-
-If during implementation of Phase N you discover Phase M must change, **do not silently patch it**. Insert this entry in the phase doc immediately after Phase N, before Phase N+1:
-
-```markdown
-## Phase N → Phase M.1 (backtrack)
-- Trigger: <what you discovered in Phase N that requires this>
-- Changes to Phase M: <what specifically changes>
-- Impact on already-completed work: <what needs to be revisited>
-```
-
-Then implement Phase M.1 before continuing to Phase N+1.
-
-**The phase doc is the source of truth for where you are.** Update it as each phase completes.
+**The phase doc is the source of truth for where you are.** Update status after each sub-version. A phase with any `[ ]` sub-versions is not complete.
 
 ---
 
