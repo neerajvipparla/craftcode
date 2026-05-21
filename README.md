@@ -172,7 +172,6 @@ Before the conversation compacts or a session ends mid-feature, invoke `/handoff
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/craftcode.git
 cd craftcode
 ./install.sh
 ```
