@@ -26,15 +26,22 @@ Create `docs/POC/POC.md` (append if exists):
 ```markdown
 ## <Feature Name> — <date>
 
+### Why POC (not prod)
+- <reason> — e.g. unknown domain / validating assumption / exploring interface fit / spike before committing to design
+
+### What we are trying to prove
+- <hypothesis> — success condition: <how we know the POC answered the question>
+
 ### Decisions taken for POC
-- <decision> → <why acceptable for POC>
+- <decision> → <why acceptable for POC, what it breaks if carried forward>
 
 ### What MUST change for prod
-| POC shortcut | Prod requirement | Why |
+| POC shortcut | Prod requirement | Why it matters |
 |---|---|---|
+| | | |
 
 ### Recommendations when productionizing
-- ...
+- <recommendation> — because <rationale from what we learned in POC>
 ```
 Relaxed: skips time-complexity annotation, allows single-file modules.
 Still enforces: no cyclic deps, tests in `tests/`, phase doc required.
@@ -140,22 +147,64 @@ Document each gate answer in the phase doc under a `## SOLID Gates` heading befo
 
 ---
 
-### Design Pattern Selection
+### Design Pattern Selection Gate
 
-Pick the pattern that fits the boundary, not the one that's familiar.
+**This is a required decision, not a reference lookup.** Pick exactly one primary pattern. Write the selection in the phase doc under `## Pattern Selection` before writing any code. No selection = no code.
 
-| Situation | Pattern |
-|---|---|
-| Multiple implementations of one interface | Strategy / Interface injection |
-| Object creation is complex or conditional | Factory / Builder |
-| One-to-many event propagation | Observer / Pub-Sub |
-| Wrap existing interface without changing it | Decorator / Proxy |
-| Step sequence with shared state | Template Method |
-| Independent subsystems must not know each other | Mediator / Event bus |
-| Tree of composable operations | Composite |
-| Accumulate result by traversing a structure | Visitor |
+```
+## Pattern Selection
+Primary pattern: <name> (<category: Creational / Structural / Behavioral>)
+Why it fits: <one sentence — what situation in the tables below maps to this module>
+Trade-off: <what you give up with this choice>
+Anti-pattern avoided: <what you would have reached for without this discipline>
+```
 
-**Hard rules:**
+---
+
+#### Creational — How objects are created
+
+Use when object creation logic needs to be decoupled from usage, or construction is complex.
+
+| Pattern | Use when | Avoid when |
+|---|---|---|
+| **Factory Method** | One interface, multiple concrete implementations selected at runtime | Only one concrete type will ever exist |
+| **Abstract Factory** | Families of related objects must be created together consistently | Only one product type involved |
+| **Builder** | Object has many optional fields or a complex multi-step construction sequence | Object is simple — Builder adds ceremony for nothing |
+| **Singleton** | Exactly one instance required across the whole program (registry, connection pool) | Any shared mutable state — Singleton + mutation = hidden global |
+| **Prototype** | New objects are cloned from an existing instance rather than built from scratch | Construction is cheap — just call the constructor |
+
+#### Structural — How objects are composed
+
+Use when you need to assemble objects into larger structures without tight coupling.
+
+| Pattern | Use when | Avoid when |
+|---|---|---|
+| **Adapter** | Wrapping an incompatible third-party or legacy interface to match what callers expect | You own both sides — just change the interface |
+| **Bridge** | Abstraction and implementation must vary independently (two axes of change) | Only one implementation exists today |
+| **Composite** | Treating individual items and collections of items uniformly (trees, hierarchies) | Items are always leaf nodes, never containers |
+| **Decorator** | Adding behavior to an existing interface without subclassing or modifying the original | More than 2–3 layers — use an explicit pipeline instead |
+| **Facade** | Providing a simplified entry surface over a complex subsystem for callers who don't need the details | The subsystem is simple — Facade adds indirection for nothing |
+| **Proxy** | Controlling access to an object: lazy init, auth checks, caching, remote call, logging | Direct access is fine — Proxy adds latency and indirection |
+
+#### Behavioral — How objects communicate
+
+Use when you need to decouple senders from receivers, or define algorithms and state machines cleanly.
+
+| Pattern | Use when | Avoid when |
+|---|---|---|
+| **Chain of Responsibility** | Multiple handlers might process a request; pass until one handles it | All handlers must run — use a pipeline/middleware instead |
+| **Command** | Encapsulate a request as an object: supports undo, queuing, logging operations | No history or queuing needed — just call the function directly |
+| **Observer / Pub-Sub** | One-to-many: state change notifies an unknown, dynamic set of dependents | Dependents are known and stable — direct calls are clearer |
+| **Strategy** | Algorithm is swappable at runtime; same interface, different behavior | Only one algorithm exists or algorithms will never change |
+| **Template Method** | Fixed algorithm skeleton; subclasses fill in specific steps | Steps don't vary — extract shared logic into a helper |
+| **Mediator** | Many objects communicate through a central hub to reduce coupling between them | Only two objects interact — Mediator is overkill |
+| **State** | Object behavior changes based on explicit internal state (state machine) | Only two states — a boolean flag is sufficient |
+| **Visitor** | Adding operations to a class hierarchy without modifying its classes | Hierarchy changes frequently — Visitor breaks when new node types are added |
+| **Iterator** | Sequential access to collection elements without exposing internal structure | Collection already provides standard iteration |
+
+---
+
+**Hard rules (apply regardless of pattern chosen):**
 - No concrete type imported across package boundaries — depend on interfaces
 - No global mutable state
 - No init-time side effects
